@@ -1,0 +1,123 @@
+<UserControl x:Class="GamebuinoAKA.IDE.Views.NewProjectView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BrushBackground}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="600" Margin="40,32" HorizontalAlignment="Left">
+
+            <TextBlock Text="Nouveau projet" FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource BrushText}" Margin="0,0,0,24"/>
+
+            <!-- Project Name -->
+            <TextBlock Text="Nom du projet" Style="{StaticResource FieldLabelStyle}"/>
+            <TextBox Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource FormTextBoxStyle}"/>
+
+            <!-- Template Selection -->
+            <TextBlock Text="Template" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="Empty"
+                             IsChecked="{Binding SelectedTemplate,
+                                 Converter={StaticResource EqualityConverter},
+                                 ConverterParameter=empty}"
+                             Style="{StaticResource RadioTemplateStyle}"
+                             Margin="0,0,12,0"/>
+                <RadioButton Content="Hello World"
+                             IsChecked="{Binding SelectedTemplate,
+                                 Converter={StaticResource EqualityConverter},
+                                 ConverterParameter=hello-world}"
+                             Style="{StaticResource RadioTemplateStyle}"
+                             Margin="0,0,12,0"/>
+                <RadioButton Content="Game Template"
+                             IsChecked="{Binding SelectedTemplate,
+                                 Converter={StaticResource EqualityConverter},
+                                 ConverterParameter=game-template}"
+                             Style="{StaticResource RadioTemplateStyle}"/>
+            </StackPanel>
+
+            <!-- Template description -->
+            <Border Background="{StaticResource BrushSurface}"
+                    BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,8,0,0">
+                <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12"
+                           TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="empty">
+                                    <Setter Property="Text" Value="Projet vide avec platformio.ini pré-configuré pour l'ESP32-S3 Gamebuino AKA. Aucun code de démarrage."/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="hello-world">
+                                    <Setter Property="Text" Value="Affiche &quot;Hello Gamebuino AKA!&quot; sur l'écran. Idéal pour valider le setup."/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="game-template">
+                                    <Setter Property="Text" Value="Structure complète avec game.h/game.cpp séparant la logique et le rendu. Idéal pour débuter un vrai jeu."/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Border>
+
+            <!-- Destination Folder -->
+            <TextBlock Text="Dossier de destination" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding DestinationFolder, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}"
+                         Margin="0,0,8,0"/>
+                <Button Grid.Column="1"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseDestinationCommand}"
+                        Content="Parcourir"/>
+            </Grid>
+
+            <!-- Preview path -->
+            <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,4,0,0">
+                <Run Text="Créera : "/>
+                <Run Text="{Binding DestinationFolder}"/>
+                <Run Text="\"/>
+                <Run Text="{Binding ProjectName}" FontWeight="SemiBold"/>
+            </TextBlock>
+
+            <!-- Status / Error -->
+            <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="4"
+                    Visibility="{Binding StatusMessage,
+                        Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="#1A3A1A"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasError}" Value="True">
+                                <Setter Property="Background" Value="#3A1A1A"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource BrushText}" FontSize="13"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal" Margin="0,24,0,0">
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{Binding CreateProjectCommand}"
+                        Content="✅  Créer le projet"
+                        IsEnabled="{Binding IsCreating,
+                            Converter={StaticResource InverseBoolConverter}}"
+                        Margin="0,0,12,0"/>
+                <TextBlock Text="Création en cours..."
+                           Foreground="{StaticResource BrushTextMuted}"
+                           VerticalAlignment="Center"
+                           Visibility="{Binding IsCreating,
+                               Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,104 @@
+<UserControl x:Class="GamebuinoAKA.IDE.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{StaticResource BrushBackground}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="640" Margin="40,32" HorizontalAlignment="Left">
+
+            <TextBlock Text="Paramètres" FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource BrushText}" Margin="0,0,0,24"/>
+
+            <!-- Workspace -->
+            <TextBlock Text="Workspace" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="Dossier des projets" Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding WorkspaceFolder, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseWorkspaceFolderCommand}"
+                        Content="Parcourir"/>
+            </Grid>
+
+            <!-- PlatformIO -->
+            <TextBlock Text="PlatformIO" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="Chemin vers pio.exe (optionnel – laissez vide pour utiliser le PATH)"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding PlatformIOPath, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowsePlatformIOCommand}"
+                        Content="Parcourir"/>
+            </Grid>
+            <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,0,0,16">
+                <Run Text="Version détectée : "/>
+                <Run Text="{Binding DetectedPioVersion}" Foreground="{StaticResource BrushAccent}"/>
+            </TextBlock>
+
+            <!-- VS Code -->
+            <TextBlock Text="VS Code" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="Chemin vers Code.exe (optionnel)"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding VSCodePath, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseVSCodeCommand}"
+                        Content="Parcourir"/>
+            </Grid>
+
+            <!-- Gamebuino lib -->
+            <TextBlock Text="Bibliothèque Gamebuino AKA" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="URL du dépôt (lib_deps)" Style="{StaticResource FieldLabelStyle}"/>
+            <TextBox Text="{Binding GamebuinoLibRepoUrl, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource FormTextBoxStyle}" Margin="0,4,0,16"/>
+
+            <!-- Theme -->
+            <TextBlock Text="Thème" Style="{StaticResource SectionHeaderStyle}"/>
+            <ComboBox ItemsSource="{Binding Themes}"
+                      SelectedItem="{Binding Theme}"
+                      Style="{StaticResource ComboBoxStyle}"
+                      Margin="0,4,0,24"/>
+
+            <!-- Status message -->
+            <Border Padding="12,8" CornerRadius="4" Margin="0,0,0,16"
+                    Background="{StaticResource BrushSurface}"
+                    Visibility="{Binding StatusMessage,
+                        Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource BrushText}" FontSize="13"/>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{Binding SaveCommand}"
+                        Content="💾  Enregistrer"
+                        Margin="0,0,12,0"/>
+                <Button Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding AutoDetectCommand}"
+                        Content="🔍  Auto-détecter les outils"
+                        Margin="0,0,12,0"/>
+                <Button Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding ResetCommand}"
+                        Content="↺  Réinitialiser"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

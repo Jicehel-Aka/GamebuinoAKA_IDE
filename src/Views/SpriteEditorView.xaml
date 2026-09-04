@@ -6,79 +6,168 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="240"/>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="280"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Left: Tools & Palette -->
+        <!-- Left: Tools -->
         <Border Grid.Column="0"
                 Background="{StaticResource BrushSurface}"
                 BorderBrush="{StaticResource BrushBorder}"
-                BorderThickness="0,0,1,0" Padding="12">
-            <StackPanel>
-                <TextBlock Text="Outils" Style="{StaticResource SectionHeaderStyle}"/>
+                BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Image" Style="{StaticResource SectionHeaderStyle}"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding ImportImageCommand}"
+                            Content="📂 Importer image"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding RevertCommand}"
+                            Content="↩ Rétablir l'original"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,4"/>
+                    <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}">
+                        <Run Text="Taille : "/>
+                        <Run Text="{Binding Dimensions, Mode=OneWay}" Foreground="{StaticResource BrushAccent}"/>
+                    </TextBlock>
 
-                <!-- Import -->
-                <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding ImportImageCommand}"
-                        Content="📂 Importer image"
-                        HorizontalAlignment="Stretch" Margin="0,0,0,8"/>
-                <Button Style="{StaticResource SecondaryButtonStyle}"
-                        Command="{Binding ImportSpritesheetCommand}"
-                        Content="🗂 Importer spritesheet"
-                        HorizontalAlignment="Stretch" Margin="0,0,0,16"/>
+                    <!-- Planche à grille fixe -->
+                    <TextBlock Text="Planche (grille fixe)" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,4"/>
+                    <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,4,4">
+                            <TextBlock Text="Frame L" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding FrameWidth}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,4">
+                            <TextBlock Text="Frame H" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding FrameHeight}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                    </UniformGrid>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ImportSpritesheetCommand}"
+                            Content="🗂 Importer planche (grille)"
+                            HorizontalAlignment="Stretch"/>
+                    <TextBlock Text="{Binding FrameInfo}" FontSize="11"
+                               Foreground="{StaticResource BrushTextMuted}" TextWrapping="Wrap"
+                               Margin="0,4,0,0"/>
 
-                <!-- Zoom -->
-                <TextBlock Text="Zoom" Style="{StaticResource FieldLabelStyle}"/>
-                <ComboBox ItemsSource="{Binding ZoomLevels}"
-                          SelectedItem="{Binding Zoom}"
-                          Style="{StaticResource ComboBoxStyle}"
-                          Margin="0,0,0,16"/>
+                    <!-- Zoom -->
+                    <TextBlock Text="Zoom" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,4"/>
+                    <ComboBox ItemsSource="{Binding ZoomLevels}"
+                              SelectedItem="{Binding Zoom}"
+                              Style="{StaticResource ComboBoxStyle}"/>
 
-                <!-- Palette -->
-                <TextBlock Text="Palette (16 couleurs)" Style="{StaticResource FieldLabelStyle}"/>
-                <ItemsControl ItemsSource="{Binding Palette}" Margin="0,4,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="4"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Width="40" Height="40" Margin="2"
-                                    BorderBrush="{StaticResource BrushBorder}"
-                                    BorderThickness="1" Cursor="Hand">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{Binding .,
-                                        Converter={StaticResource Rgb565ToColorConverter}}"/>
-                                </Border.Background>
-                                <Border.InputBindings>
-                                    <MouseBinding MouseAction="LeftClick"
-                                                  Command="{Binding DataContext.SelectColorCommand,
-                                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                  CommandParameter="{Binding}"/>
-                                </Border.InputBindings>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <!-- Sélection -->
+                    <TextBlock Text="Sélection" Style="{StaticResource SectionHeaderStyle}" Margin="0,16,0,4"/>
+                    <CheckBox Content="Mode sélection (glisser sur l'image)"
+                              IsChecked="{Binding SelectionMode}"
+                              Foreground="{StaticResource BrushText}" Margin="0,0,0,6"/>
+                    <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,4,4">
+                            <TextBlock Text="X" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding SelX}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,4">
+                            <TextBlock Text="Y" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding SelY}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,4,4">
+                            <TextBlock Text="Largeur" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding SelW}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,4">
+                            <TextBlock Text="Hauteur" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding SelH}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                    </UniformGrid>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding CropCommand}"
+                            Content="✂ Rogner à la sélection"
+                            HorizontalAlignment="Stretch" Margin="0,4,0,0"/>
 
-                <!-- Selected color preview -->
-                <TextBlock Text="Couleur sélectionnée" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,4"/>
-                <Border Height="32" BorderBrush="{StaticResource BrushBorder}" BorderThickness="1">
-                    <Border.Background>
-                        <SolidColorBrush Color="{Binding SelectedColor,
-                            Converter={StaticResource Rgb565ToColorConverter}}"/>
-                    </Border.Background>
-                </Border>
+                    <!-- Réduction -->
+                    <TextBlock Text="Réduire" Style="{StaticResource SectionHeaderStyle}" Margin="0,16,0,4"/>
+                    <UniformGrid Columns="2">
+                        <StackPanel Margin="0,0,4,4">
+                            <TextBlock Text="Largeur cible" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding TargetWidth}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,4">
+                            <TextBlock Text="Hauteur cible" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding TargetHeight}" Style="{StaticResource FormTextBoxStyle}"/>
+                        </StackPanel>
+                    </UniformGrid>
+                    <CheckBox Content="Lissage (bicubique)"
+                              IsChecked="{Binding SmoothResize}"
+                              Foreground="{StaticResource BrushText}" Margin="0,0,0,6"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ResizeCommand}"
+                            Content="⤵ Réduire à la taille cible"
+                            HorizontalAlignment="Stretch"/>
 
-                <!-- Export -->
-                <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding ExportCodeCommand}"
-                        Content="💾 Exporter C++"
-                        HorizontalAlignment="Stretch" Margin="0,16,0,0"/>
-            </StackPanel>
+                    <!-- Palette / retouche -->
+                    <TextBlock Text="Retouche" Style="{StaticResource SectionHeaderStyle}" Margin="0,16,0,4"/>
+                    <ItemsControl ItemsSource="{Binding Palette}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Columns="8"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="24" Height="24" Margin="1"
+                                        BorderBrush="{StaticResource BrushBorder}"
+                                        BorderThickness="1" Cursor="Hand">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding ., Converter={StaticResource Rgb565ToColorConverter}}"/>
+                                    </Border.Background>
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.SelectColorCommand,
+                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Transparence -->
+                    <TextBlock Text="Transparence" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,4"/>
+                    <CheckBox Content="Utiliser la couleur-clé"
+                              IsChecked="{Binding UseTransparency}"
+                              Foreground="{StaticResource BrushText}" Margin="0,0,0,4"/>
+                    <CheckBox Content="Peindre en transparent"
+                              IsChecked="{Binding PaintingTransparent}"
+                              Foreground="{StaticResource BrushText}" Margin="0,0,0,4"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding PickTransparentFromSelectedCommand}"
+                            Content="Définir clé = couleur sélectionnée"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,4"/>
+                    <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}">
+                        <Run Text="Clé : "/>
+                        <Run Text="{Binding TransparentKeyHex, Mode=OneWay}" Foreground="{StaticResource BrushAccent}"/>
+                    </TextBlock>
+
+                    <!-- Conversion / projet -->
+                    <TextBlock Text="Conversion" Style="{StaticResource SectionHeaderStyle}" Margin="0,16,0,4"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding ConvertCommand}"
+                            Content="⚙ Convertir (voir le code)"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ExportCppCommand}"
+                            Content="💾 Exporter C++"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SaveProjectCommand}"
+                            Content="💾 Enregistrer projet (.gbspr)"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,4"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding OpenProjectCommand}"
+                            Content="📂 Ouvrir projet"
+                            HorizontalAlignment="Stretch"/>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- Center: Canvas -->
@@ -92,7 +181,8 @@
                     BorderBrush="{StaticResource BrushBorder}"
                     BorderThickness="0,0,0,1">
                 <TextBlock Text="{Binding StatusMessage}"
-                           Foreground="{StaticResource BrushTextMuted}" FontSize="12"/>
+                           Foreground="{StaticResource BrushTextMuted}" FontSize="12"
+                           TextWrapping="Wrap"/>
             </Border>
             <ScrollViewer Grid.Row="1"
                           HorizontalScrollBarVisibility="Auto"
@@ -101,6 +191,9 @@
                                       SpriteSource="{Binding PreviewBitmap}"
                                       Zoom="{Binding Zoom}"
                                       PaintCommand="{Binding PaintPixelRelayCommand}"
+                                      SelectionMode="{Binding SelectionMode}"
+                                      Selection="{Binding Selection, Mode=TwoWay}"
+                                      SelectCommand="{Binding SelectFromCanvasCommand}"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"
                                       Margin="20"/>
@@ -120,7 +213,7 @@
                 <Border Grid.Row="0" Padding="12,8"
                         BorderBrush="{StaticResource BrushBorder}"
                         BorderThickness="0,0,0,1">
-                    <TextBlock Text="Code C++ généré"
+                    <TextBlock Text="Code C++ (généré à la conversion)"
                                Foreground="{StaticResource BrushText}"
                                FontWeight="SemiBold" FontSize="12"/>
                 </Border>

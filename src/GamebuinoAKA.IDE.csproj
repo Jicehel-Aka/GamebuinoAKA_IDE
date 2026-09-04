@@ -2,21 +2,24 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <AssemblyName>GamebuinoAKA.IDE</AssemblyName>
     <RootNamespace>GamebuinoAKA.IDE</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseWindowsForms>true</UseWindowsForms>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Icône de l'exécutable (barre des tâches / explorateur) -->
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Toolkit.Mvvm" Version="7.1.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
-    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
   </ItemGroup>
 
   <!-- Templates embarqués comme ressources -->
@@ -24,9 +27,18 @@
     <EmbeddedResource Include="Templates\**\*" />
   </ItemGroup>
 
+  <!-- Lib Gamebuino embarquée : copiée dans le dossier de sortie (bin\...\Lib\gamebuino)
+       puis injectée dans chaque nouveau projet ESP-IDF. -->
+  <ItemGroup>
+    <Content Include="Lib\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- Assets -->
   <ItemGroup>
     <Resource Include="Assets\logo.png" Condition="Exists('Assets\logo.png')" />
+    <Resource Include="Assets\logo.ico" Condition="Exists('Assets\logo.ico')" />
   </ItemGroup>
 
 </Project>

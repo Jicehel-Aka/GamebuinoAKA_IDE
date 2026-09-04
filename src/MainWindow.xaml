@@ -7,6 +7,7 @@
         Height="768" Width="1280"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Assets/logo.png"
         Background="{StaticResource BrushBackground}">
 
     <Window.DataContext>
@@ -30,13 +31,19 @@
                         Padding="16,20,16,16"
                         BorderBrush="{StaticResource BrushBorder}"
                         BorderThickness="0,0,0,1">
-                    <StackPanel>
-                        <TextBlock Text="Gamebuino"
-                                   FontSize="18" FontWeight="Bold"
-                                   Foreground="{StaticResource BrushAccent}"/>
-                        <TextBlock Text="AKA IDE"
-                                   FontSize="14"
-                                   Foreground="{StaticResource BrushTextMuted}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="pack://application:,,,/Assets/logo.png"
+                               Width="32" Height="32" Margin="0,0,10,0"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Gamebuino"
+                                       FontSize="18" FontWeight="Bold"
+                                       Foreground="{StaticResource BrushAccent}"/>
+                            <TextBlock Text="AKA IDE"
+                                       FontSize="14"
+                                       Foreground="{StaticResource BrushTextMuted}"/>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -62,6 +69,10 @@
                     <Button Style="{StaticResource NavButtonStyle}"
                             Command="{Binding NavigateToTilemapEditorCommand}"
                             Content="🗺️  Tilemaps"
+                            IsEnabled="{Binding IsNotBusy}"/>
+                    <Button Style="{StaticResource NavButtonStyle}"
+                            Command="{Binding NavigateToSoundBankCommand}"
+                            Content="🎵  Banque sonore"
                             IsEnabled="{Binding IsNotBusy}"/>
                 </StackPanel>
 

@@ -1,20 +1,20 @@
 ﻿GamebuinoAKA.IDE
-
+1.0.0.0
 
 winexe
 C#
 .cs
-C:\Users\jean_\.bob\playground\GamebuinoAKA.IDE\src\GamebuinoAKA.IDE\obj\Debug\net5.0-windows\
+C:\Users\jean_\.bob\playground\GamebuinoAKA.IDE\src\obj\Debug\net5.0-windows\
 GamebuinoAKA.IDE
 none
 false
-TRACE;DEBUG;NET;NET5_0;NETCOREAPP
-C:\Users\jean_\.bob\playground\GamebuinoAKA.IDE\src\GamebuinoAKA.IDE\App.xaml
+TRACE;DEBUG;NET;NET5_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+C:\Users\jean_\.bob\playground\GamebuinoAKA.IDE\src\App.xaml
 10383849976
-
-29-717371593
-2061928646572
+47-994647709
+35-694664979
+207-900175177
 Controls\PixelCanvas.xaml;Controls\TilemapGrid.xaml;MainWindow.xaml;Themes\Dark.xaml;Views\HomeView.xaml;Views\NewProjectView.xaml;Views\ProjectsView.xaml;Views\SettingsView.xaml;Views\SpriteEditorView.xaml;Views\TilemapEditorView.xaml;
 
-False
+True
 

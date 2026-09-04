@@ -51,7 +51,7 @@ namespace GamebuinoAKA.IDE.ViewModels
             set => SetProperty(ref _activeLayer, value);
         }
 
-        private string _statusMessage = "Importez un tileset pour commencer";
+        private string _statusMessage = "Importez un tileset ou ouvrez un projet tilemap (.gbmap)";
         public string StatusMessage
         {
             get => _statusMessage;
@@ -66,38 +66,24 @@ namespace GamebuinoAKA.IDE.ViewModels
         }
 
         private int _mapColumns = 20;
-        public int MapColumns
-        {
-            get => _mapColumns;
-            set => SetProperty(ref _mapColumns, value);
-        }
+        public int MapColumns { get => _mapColumns; set => SetProperty(ref _mapColumns, value); }
 
         private int _mapRows = 15;
-        public int MapRows
-        {
-            get => _mapRows;
-            set => SetProperty(ref _mapRows, value);
-        }
+        public int MapRows { get => _mapRows; set => SetProperty(ref _mapRows, value); }
 
         private int _tileWidth = 16;
-        public int TileWidth
-        {
-            get => _tileWidth;
-            set => SetProperty(ref _tileWidth, value);
-        }
+        public int TileWidth { get => _tileWidth; set => SetProperty(ref _tileWidth, value); }
 
         private int _tileHeight = 16;
-        public int TileHeight
-        {
-            get => _tileHeight;
-            set => SetProperty(ref _tileHeight, value);
-        }
+        public int TileHeight { get => _tileHeight; set => SetProperty(ref _tileHeight, value); }
 
         public ICommand PaintTileRelayCommand { get; }
         public ICommand SelectTileCommand { get; }
         public ICommand ImportTilesetCommand { get; }
         public ICommand ApplyMapSizeCommand { get; }
         public ICommand ExportCodeCommand { get; }
+        public ICommand SaveProjectCommand { get; }
+        public ICommand OpenProjectCommand { get; }
 
         public string[] LayerNames { get; } = new[] { "Background", "Foreground" };
 
@@ -109,6 +95,8 @@ namespace GamebuinoAKA.IDE.ViewModels
             ImportTilesetCommand = new AsyncRelayCommand(ImportTilesetAsync);
             ApplyMapSizeCommand = new RelayCommand(ApplyMapSize);
             ExportCodeCommand = new RelayCommand(ExportCode);
+            SaveProjectCommand = new RelayCommand(SaveProject);
+            OpenProjectCommand = new RelayCommand(OpenProject);
         }
 
         private async Task ImportTilesetAsync()
@@ -116,26 +104,22 @@ namespace GamebuinoAKA.IDE.ViewModels
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Importer un tileset",
-                Filter = "Images PNG|*.png"
+                Filter = "Images PNG|*.png;*.bmp"
             };
             if (dlg.ShowDialog() != true) return;
 
             StatusMessage = "Chargement du tileset...";
             try
             {
-                CurrentTilemap = await _assetService.ImportTilesetAsync(
-                    dlg.FileName, TileWidth, TileHeight);
+                CurrentTilemap = await _assetService.ImportTilesetAsync(dlg.FileName, TileWidth, TileHeight);
                 CurrentTilemap.MapColumns = MapColumns;
                 CurrentTilemap.MapRows = MapRows;
                 CurrentTilemap.InitializeLayers();
                 RenderTileset();
                 RenderMapPreview();
-                StatusMessage = $"Tileset chargé : {CurrentTilemap.TilesetColumns}×{CurrentTilemap.TilesetRows} tuiles";
+                StatusMessage = $"Tileset : {CurrentTilemap.TilesetColumns}×{CurrentTilemap.TilesetRows} tuiles, {FormatLabel()}";
             }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Erreur : {ex.Message}";
-            }
+            catch (Exception ex) { StatusMessage = $"Erreur : {ex.Message}"; }
         }
 
         private void ApplyMapSize()
@@ -173,12 +157,53 @@ namespace GamebuinoAKA.IDE.ViewModels
             StatusMessage = $"Exporté dans {dlg.FileName}";
         }
 
+        private void SaveProject()
+        {
+            if (CurrentTilemap is null) return;
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Enregistrer le projet tilemap (ré-éditable)",
+                Filter = $"Projet tilemap (*{AssetService.TilemapProjectExt})|*{AssetService.TilemapProjectExt}",
+                FileName = (CurrentTilemap.Name ?? "tilemap") + AssetService.TilemapProjectExt
+            };
+            if (dlg.ShowDialog() != true) return;
+            _assetService.SaveTilemap(CurrentTilemap, dlg.FileName);
+            StatusMessage = $"Projet enregistré : {dlg.FileName}";
+        }
+
+        private void OpenProject()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Ouvrir un projet tilemap",
+                Filter = $"Projet tilemap (*{AssetService.TilemapProjectExt})|*{AssetService.TilemapProjectExt}"
+            };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                CurrentTilemap = _assetService.LoadTilemap(dlg.FileName);
+                MapColumns = CurrentTilemap.MapColumns;
+                MapRows = CurrentTilemap.MapRows;
+                TileWidth = CurrentTilemap.TileWidth;
+                TileHeight = CurrentTilemap.TileHeight;
+                RenderTileset();
+                RenderMapPreview();
+                StatusMessage = $"Projet ouvert : {CurrentTilemap.Name} ({FormatLabel()})";
+            }
+            catch (Exception ex) { StatusMessage = $"Erreur d'ouverture : {ex.Message}"; }
+        }
+
+        private string FormatLabel() =>
+            CurrentTilemap is null ? "" :
+            (CurrentTilemap.ColorFormat == ColorFormat.Bgr565Aka ? "BGR565 (AKA)" : "RGB565 std");
+
         private void RenderTileset()
         {
             if (CurrentTilemap?.TilesetPixels is null) return;
             var tw = CurrentTilemap.TilesetColumns * CurrentTilemap.TileWidth;
             var th = CurrentTilemap.TilesetRows * CurrentTilemap.TileHeight;
-            TilesetBitmap = Rgb565ToBitmap(CurrentTilemap.TilesetPixels, tw, th);
+            TilesetBitmap = PackedToBitmap(CurrentTilemap.TilesetPixels, tw, th,
+                CurrentTilemap.ColorFormat, false, CurrentTilemap.TransparentKey);
         }
 
         private void RenderMapPreview()
@@ -190,14 +215,16 @@ namespace GamebuinoAKA.IDE.ViewModels
             int tw = CurrentTilemap.TileWidth;
             int th = CurrentTilemap.TileHeight;
             int tsW = CurrentTilemap.TilesetColumns * tw;
+            var fmt = CurrentTilemap.ColorFormat;
+            bool useT = CurrentTilemap.UseTransparency;
+            ushort key = CurrentTilemap.TransparentKey;
 
+            // Pbgra32 : gère la transparence par couleur-clé au blit.
             var pixels = new int[mapW * mapH];
 
             for (int layer = 0; layer < 2; layer++)
             {
-                var data = layer == 0
-                    ? CurrentTilemap.BackgroundLayer
-                    : CurrentTilemap.ForegroundLayer;
+                var data = layer == 0 ? CurrentTilemap.BackgroundLayer : CurrentTilemap.ForegroundLayer;
 
                 for (int row = 0; row < CurrentTilemap.MapRows; row++)
                 {
@@ -216,32 +243,45 @@ namespace GamebuinoAKA.IDE.ViewModels
                                 int srcX = srcTileCol * tw + px;
                                 int srcY = srcTileRow * th + py;
                                 int srcIdx = srcY * tsW + srcX;
-                                if (srcIdx >= CurrentTilemap.TilesetPixels.Length) continue;
+                                if (srcIdx < 0 || srcIdx >= CurrentTilemap.TilesetPixels.Length) continue;
 
-                                var c = AssetService.Rgb565ToColor(CurrentTilemap.TilesetPixels[srcIdx]);
+                                ushort v = CurrentTilemap.TilesetPixels[srcIdx];
+                                // Sur la couche premier plan, la couleur-clé ne peint pas.
+                                if (useT && layer == 1 && v == key) continue;
+
+                                var c = AssetService.Unpack(v, fmt);
                                 int dstX = col * tw + px;
                                 int dstY = row * th + py;
-                                pixels[dstY * mapW + dstX] = (c.R << 16) | (c.G << 8) | c.B;
+                                pixels[dstY * mapW + dstX] = (0xFF << 24) | (c.R << 16) | (c.G << 8) | c.B;
                             }
                         }
                     }
                 }
             }
 
-            var bmp = new WriteableBitmap(mapW, mapH, 96, 96, PixelFormats.Bgr32, null);
+            var bmp = new WriteableBitmap(mapW, mapH, 96, 96, PixelFormats.Pbgra32, null);
             bmp.WritePixels(new Int32Rect(0, 0, mapW, mapH), pixels, mapW * 4, 0);
             MapPreviewBitmap = bmp;
         }
 
-        private static WriteableBitmap Rgb565ToBitmap(ushort[] data, int w, int h)
+        private static WriteableBitmap PackedToBitmap(ushort[] data, int w, int h,
+            ColorFormat fmt, bool useTransparency, ushort key)
         {
             var pixels = new int[w * h];
             for (int i = 0; i < pixels.Length && i < data.Length; i++)
             {
-                var c = AssetService.Rgb565ToColor(data[i]);
-                pixels[i] = (c.R << 16) | (c.G << 8) | c.B;
+                ushort v = data[i];
+                if (useTransparency && v == key)
+                {
+                    pixels[i] = 0;
+                }
+                else
+                {
+                    var c = AssetService.Unpack(v, fmt);
+                    pixels[i] = (0xFF << 24) | (c.R << 16) | (c.G << 8) | c.B;
+                }
             }
-            var bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgr32, null);
+            var bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Pbgra32, null);
             bmp.WritePixels(new Int32Rect(0, 0, w, h), pixels, w * 4, 0);
             return bmp;
         }

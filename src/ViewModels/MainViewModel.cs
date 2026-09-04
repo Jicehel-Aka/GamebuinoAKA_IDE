@@ -59,6 +59,7 @@ namespace GamebuinoAKA.IDE.ViewModels
         public ICommand NavigateToNewProjectCommand { get; }
         public ICommand NavigateToSpriteEditorCommand { get; }
         public ICommand NavigateToTilemapEditorCommand { get; }
+        public ICommand NavigateToSoundBankCommand { get; }
         public ICommand NavigateToSettingsCommand { get; }
 
         public MainViewModel(PlatformIOService platformIO, VSCodeService vscode)
@@ -71,6 +72,7 @@ namespace GamebuinoAKA.IDE.ViewModels
             NavigateToNewProjectCommand = new RelayCommand(NavigateToNewProject);
             NavigateToSpriteEditorCommand = new RelayCommand(NavigateToSpriteEditor);
             NavigateToTilemapEditorCommand = new RelayCommand(NavigateToTilemapEditor);
+            NavigateToSoundBankCommand = new RelayCommand(NavigateToSoundBank);
             NavigateToSettingsCommand = new RelayCommand(NavigateToSettings);
 
             _ = InitializeAsync();
@@ -93,6 +95,8 @@ namespace GamebuinoAKA.IDE.ViewModels
             CurrentPage = App.Services.GetRequiredService<SpriteEditorView>();
         private void NavigateToTilemapEditor() =>
             CurrentPage = App.Services.GetRequiredService<TilemapEditorView>();
+        private void NavigateToSoundBank() =>
+            CurrentPage = App.Services.GetRequiredService<SoundBankView>();
         private void NavigateToSettings() =>
             CurrentPage = App.Services.GetRequiredService<SettingsView>();
     }

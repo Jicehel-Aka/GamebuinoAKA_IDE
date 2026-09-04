@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace GamebuinoAKA.IDE.Models
 {
@@ -10,28 +11,31 @@ namespace GamebuinoAKA.IDE.Models
         public int TileWidth { get; set; } = 16;
         public int TileHeight { get; set; } = 16;
 
-        /// <summary>Number of columns in the map grid.</summary>
         public int MapColumns { get; set; } = 20;
-
-        /// <summary>Number of rows in the map grid.</summary>
         public int MapRows { get; set; } = 15;
 
-        /// <summary>Background layer tile indices (0 = empty).</summary>
+        /// <summary>Couche fond — indices de tuile (0 = vide).</summary>
         public byte[] BackgroundLayer { get; set; } = Array.Empty<byte>();
 
-        /// <summary>Foreground layer tile indices (0 = empty).</summary>
+        /// <summary>Couche premier plan — indices de tuile (0 = vide).</summary>
         public byte[] ForegroundLayer { get; set; } = Array.Empty<byte>();
 
-        /// <summary>RGB565 pixel data of the full tileset image.</summary>
+        /// <summary>Pixels 16 bits du tileset complet (format ColorFormat).</summary>
         public ushort[]? TilesetPixels { get; set; }
 
         public int TilesetColumns { get; set; }
         public int TilesetRows { get; set; }
 
-        // Derived
-        public int TotalTiles => MapColumns * MapRows;
-        public int MapPixelWidth => MapColumns * TileWidth;
-        public int MapPixelHeight => MapRows * TileHeight;
+        /// <summary>Format d'empaquetage des couleurs (défaut = BGR565 AKA).</summary>
+        public ColorFormat ColorFormat { get; set; } = ColorFormat.Bgr565Aka;
+
+        public bool UseTransparency { get; set; } = true;
+        public ushort TransparentKey { get; set; } = 0xF81F;
+
+        // ── Dérivés (non sérialisés) ────────────────────────────────────────────
+        [JsonIgnore] public int TotalTiles => MapColumns * MapRows;
+        [JsonIgnore] public int MapPixelWidth => MapColumns * TileWidth;
+        [JsonIgnore] public int MapPixelHeight => MapRows * TileHeight;
 
         public void InitializeLayers()
         {

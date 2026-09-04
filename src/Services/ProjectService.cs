@@ -15,7 +15,10 @@ namespace GamebuinoAKA.IDE.Services
             _settingsService = settingsService;
         }
 
-        /// <summary>Scans the workspace folder for Gamebuino projects (folders with platformio.ini).</summary>
+        /// <summary>
+        /// Scanne le workspace : un dossier est un projet s'il contient un
+        /// platformio.ini (PlatformIO) OU un CMakeLists.txt racine (ESP-IDF).
+        /// </summary>
         public async Task<List<GamebuinoProject>> ScanWorkspaceAsync()
         {
             var workspace = _settingsService.Settings.WorkspaceFolder;
@@ -27,19 +30,20 @@ namespace GamebuinoAKA.IDE.Services
                 var projects = new List<GamebuinoProject>();
                 foreach (var dir in Directory.GetDirectories(workspace))
                 {
-                    var iniPath = Path.Combine(dir, "platformio.ini");
-                    if (!File.Exists(iniPath)) continue;
+                    bool isPio = File.Exists(Path.Combine(dir, "platformio.ini"));
+                    bool isIdf = File.Exists(Path.Combine(dir, "CMakeLists.txt"));
+                    if (!isPio && !isIdf) continue;
 
                     var info = new DirectoryInfo(dir);
-                    var project = new GamebuinoProject
+                    projects.Add(new GamebuinoProject
                     {
                         Name = info.Name,
                         FolderPath = dir,
                         LastModified = info.LastWriteTime,
                         CreatedAt = info.CreationTime,
+                        BuildSystem = GamebuinoProject.DetectBuildSystem(dir, _settingsService.Settings.DefaultBuildSystem),
                         Template = DetectTemplate(dir)
-                    };
-                    projects.Add(project);
+                    });
                 }
                 return projects.OrderByDescending(p => p.LastModified).ToList();
             });
@@ -60,6 +64,7 @@ namespace GamebuinoAKA.IDE.Services
                         FolderPath = path,
                         LastModified = info.LastWriteTime,
                         CreatedAt = info.CreationTime,
+                        BuildSystem = GamebuinoProject.DetectBuildSystem(path, _settingsService.Settings.DefaultBuildSystem),
                         Template = DetectTemplate(path)
                     });
                 }
@@ -77,6 +82,10 @@ namespace GamebuinoAKA.IDE.Services
 
         private static string DetectTemplate(string folder)
         {
+            // ESP-IDF : app_main.cpp
+            var appMain = Path.Combine(folder, "main", "app_main.cpp");
+            if (File.Exists(appMain)) return "esp-idf";
+
             var mainCpp = Path.Combine(folder, "src", "main.cpp");
             if (!File.Exists(mainCpp)) return "empty";
             var content = File.ReadAllText(mainCpp);

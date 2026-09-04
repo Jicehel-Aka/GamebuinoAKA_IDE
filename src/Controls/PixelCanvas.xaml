@@ -3,8 +3,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border BorderBrush="#333350" BorderThickness="1"
             Background="#111122">
-        <Image x:Name="PART_Image"
-               RenderOptions.BitmapScalingMode="NearestNeighbor"
-               Stretch="None"/>
+        <Grid>
+            <Image x:Name="PART_Image"
+                   RenderOptions.BitmapScalingMode="NearestNeighbor"
+                   Stretch="Fill"
+                   HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <!-- Overlay de sélection : ne capte pas la souris -->
+            <Canvas x:Name="PART_Overlay" IsHitTestVisible="False">
+                <Rectangle x:Name="PART_SelRect"
+                           Stroke="#40C4FF" StrokeThickness="1"
+                           StrokeDashArray="3 2"
+                           Fill="#3340C4FF"
+                           Visibility="Collapsed"/>
+            </Canvas>
+        </Grid>
     </Border>
 </UserControl>

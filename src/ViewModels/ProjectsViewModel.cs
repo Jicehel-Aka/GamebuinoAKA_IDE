@@ -18,7 +18,7 @@ namespace GamebuinoAKA.IDE.ViewModels
     public class ProjectsViewModel : ObservableObject
     {
         private readonly ProjectService _projectService;
-        private readonly PlatformIOService _platformIO;
+        private readonly BuildService _build;
         private readonly VSCodeService _vscode;
         private readonly SettingsService _settings;
         private readonly GitService _git;
@@ -79,7 +79,6 @@ namespace GamebuinoAKA.IDE.ViewModels
             set => SetProperty(ref _showOutput, value);
         }
 
-        // Clone dialog
         private bool _showCloneDialog;
         public bool ShowCloneDialog
         {
@@ -120,13 +119,14 @@ namespace GamebuinoAKA.IDE.ViewModels
         public ICommand ShowCloneCommand { get; }
         public ICommand CancelCloneCommand { get; }
         public ICommand CloneFromGitHubCommand { get; }
+        public ICommand ToggleBuildSystemCommand { get; }
 
         public ProjectsViewModel(ProjectService projectService,
-            PlatformIOService platformIO, VSCodeService vscode,
+            BuildService build, VSCodeService vscode,
             SettingsService settings, GitService git)
         {
             _projectService = projectService;
-            _platformIO = platformIO;
+            _build = build;
             _vscode = vscode;
             _settings = settings;
             _git = git;
@@ -143,6 +143,7 @@ namespace GamebuinoAKA.IDE.ViewModels
             ShowCloneCommand = new RelayCommand(ShowClone);
             CancelCloneCommand = new RelayCommand(CancelClone);
             CloneFromGitHubCommand = new AsyncRelayCommand(CloneFromGitHubAsync);
+            ToggleBuildSystemCommand = new AsyncRelayCommand<GamebuinoProject>(ToggleBuildSystemAsync);
 
             _ = RefreshAsync();
         }
@@ -158,11 +159,10 @@ namespace GamebuinoAKA.IDE.ViewModels
         private void ApplyFilter()
         {
             var q = SearchText?.Trim().ToLowerInvariant() ?? string.Empty;
-            var filtered = string.IsNullOrEmpty(q)
+            FilteredProjects = string.IsNullOrEmpty(q)
                 ? Projects
                 : new ObservableCollection<GamebuinoProject>(
                     Projects.Where(p => p.Name.ToLowerInvariant().Contains(q)));
-            FilteredProjects = filtered;
         }
 
         private void OpenInVSCode(GamebuinoProject? project)
@@ -177,29 +177,37 @@ namespace GamebuinoAKA.IDE.ViewModels
         {
             var p = project ?? SelectedProject;
             if (p is null) return;
-            await RunPioOperationAsync(p, _platformIO.BuildAsync);
+            await RunBuildOperationAsync(p, _build.BuildAsync);
         }
 
         private async Task FlashAsync(GamebuinoProject? project)
         {
             var p = project ?? SelectedProject;
             if (p is null) return;
-            await RunPioOperationAsync(p, _platformIO.FlashAsync);
+            await RunBuildOperationAsync(p, _build.FlashAsync);
         }
 
         private async Task MonitorAsync(GamebuinoProject? project)
         {
             var p = project ?? SelectedProject;
             if (p is null) return;
-            await RunPioOperationAsync(p, _platformIO.MonitorAsync);
+            await RunBuildOperationAsync(p, _build.MonitorAsync);
         }
 
         private void CancelOperation() => _cts?.Cancel();
 
-        private void NewProjectNavigate()
+        /// <summary>Force la chaîne de build d'un projet et fige le choix (.aka-build).</summary>
+        private async Task ToggleBuildSystemAsync(GamebuinoProject? project)
         {
-            App.Services.GetRequiredService<MainViewModel>().NavigateToNewProjectCommand.Execute(null);
+            var p = project ?? SelectedProject;
+            if (p is null) return;
+            p.BuildSystem = p.IsEspIdf ? Models.BuildSystem.PlatformIO : Models.BuildSystem.EspIdf;
+            p.WriteBuildMarker();          // écrit .aka-build pour rendre le choix persistant
+            await RefreshAsync();          // relit la liste (le marqueur est prioritaire)
         }
+
+        private void NewProjectNavigate() =>
+            App.Services.GetRequiredService<MainViewModel>().NavigateToNewProjectCommand.Execute(null);
 
         private void OpenInExplorer(GamebuinoProject? project)
         {
@@ -267,6 +275,7 @@ namespace GamebuinoAKA.IDE.ViewModels
             }
             catch (Exception ex)
             {
+                Log.Error("Clonage GitHub échoué.", ex);
                 sb.AppendLine($"\n❌ Erreur : {ex.Message}");
                 Application.Current.Dispatcher.Invoke(() => OutputLog = sb.ToString());
             }
@@ -276,7 +285,7 @@ namespace GamebuinoAKA.IDE.ViewModels
             }
         }
 
-        private async Task RunPioOperationAsync(GamebuinoProject project,
+        private async Task RunBuildOperationAsync(GamebuinoProject project,
             Func<GamebuinoProject, Action<string>?, CancellationToken, Task> operation)
         {
             _cts?.Cancel();
@@ -286,6 +295,10 @@ namespace GamebuinoAKA.IDE.ViewModels
             IsBusy = true;
 
             var sb = new StringBuilder();
+            var chain = project.IsEspIdf ? "ESP-IDF" : "PlatformIO";
+            sb.AppendLine($"[{chain}] {project.Name}");
+            Application.Current.Dispatcher.Invoke(() => OutputLog = sb.ToString());
+
             try
             {
                 await operation(project, line =>
@@ -297,6 +310,11 @@ namespace GamebuinoAKA.IDE.ViewModels
             catch (OperationCanceledException)
             {
                 OutputLog += "\n[Opération annulée]";
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Opération de build échouée ({project.Name}).", ex);
+                OutputLog += $"\n[Erreur] {ex.Message}";
             }
             finally
             {

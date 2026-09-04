@@ -121,11 +121,26 @@
                                     <!-- Meta -->
                                     <StackPanel Grid.Row="0" Grid.Column="1"
                                                 VerticalAlignment="Top" HorizontalAlignment="Right">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding BuildSystemLabel}"
+                                                       FontSize="11" Padding="6,2" Margin="0,0,6,0"
+                                                       Foreground="{StaticResource BrushText}"
+                                                       Background="{StaticResource BrushBorder}"
+                                                       VerticalAlignment="Center"/>
+                                            <Button Content="↔"
+                                                    ToolTip="Changer la chaîne (PlatformIO / ESP-IDF)"
+                                                    FontSize="11" Padding="6,1"
+                                                    Style="{StaticResource SecondaryButtonStyle}"
+                                                    Command="{Binding DataContext.ToggleBuildSystemCommand,
+                                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
                                         <TextBlock Text="{Binding Template}"
                                                    FontSize="11" Padding="6,2"
                                                    Foreground="{StaticResource BrushAccent}"
                                                    Background="{StaticResource BrushAccentMuted}"
-                                                   HorizontalAlignment="Right"/>
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,4,0,0"/>
                                         <TextBlock Text="{Binding LastModified, StringFormat='Modifié le dd/MM/yyyy'}"
                                                    FontSize="10"
                                                    Foreground="{StaticResource BrushTextMuted}"
@@ -212,7 +227,7 @@
                         BorderBrush="{StaticResource BrushBorder}"
                         BorderThickness="0,0,0,1">
                     <Grid>
-                        <TextBlock Text="Sortie PlatformIO"
+                        <TextBlock Text="Sortie"
                                    Foreground="{StaticResource BrushTextMuted}"
                                    FontSize="11" VerticalAlignment="Center"/>
                         <Button Style="{StaticResource SecondaryButtonStyle}"

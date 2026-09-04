@@ -1,0 +1,648 @@
+<UserControl x:Class="GamebuinoAKA.IDE.Views.SoundBankView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:GamebuinoAKA.IDE.ViewModels"
+             Background="{StaticResource BrushBackground}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Panneau gauche : arborescence par thème -->
+            <ColumnDefinition Width="240" MinWidth="180"/>
+            <ColumnDefinition Width="Auto"/>
+            <!-- Zone centrale : liste filtrée + barre d'outils -->
+            <ColumnDefinition Width="*" MinWidth="260"/>
+            <ColumnDefinition Width="Auto"/>
+            <!-- Panneau droit : détail / édition -->
+            <ColumnDefinition Width="280" MinWidth="220"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANNEAU GAUCHE : Catégories par thème
+        ═══════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="{StaticResource BrushSurface}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+
+                <!-- Titre + boutons d'action -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12,10"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <TextBlock Text="🎵  Banque sonore"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushAccent}"
+                                   Margin="0,0,0,8"/>
+
+                        <!-- Importer un fichier -->
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding ImportFileCommand}"
+                                Content="＋  Importer fichier"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,6"/>
+
+                        <!-- Scan projet -->
+                        <StackPanel>
+                            <TextBlock Text="Scan projet :"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource ComboBoxStyle}"
+                                      ItemsSource="{Binding AvailableProjects}"
+                                      DisplayMemberPath="Name"
+                                      x:Name="ScanProjectCombo"
+                                      Margin="0,0,0,4"/>
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding ScanProjectCommand}"
+                                    CommandParameter="{Binding SelectedItem, ElementName=ScanProjectCombo}"
+                                    IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBoolConverter}}"
+                                    HorizontalAlignment="Stretch">
+                                <Button.Content>
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                <Setter Property="Text" Value="🔍  Scanner"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsScanning}" Value="True">
+                                                        <Setter Property="Text" Value="⏳  Scan…"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Button.Content>
+                            </Button>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Filtres rapides par type -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12,8"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <TextBlock Text="Type" Style="{StaticResource FieldLabelStyle}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="TypeFilter"
+                                         Style="{StaticResource RadioTemplateStyle}"
+                                         Content="Tout"
+                                         IsChecked="{Binding SelectedTypeFilter, Converter={StaticResource EqualityConverter}, ConverterParameter=''}"
+                                         Margin="0,0,4,0"/>
+                            <RadioButton GroupName="TypeFilter"
+                                         Style="{StaticResource RadioTemplateStyle}"
+                                         Content="Sons"
+                                         IsChecked="{Binding SelectedTypeFilter, Converter={StaticResource EqualityConverter}, ConverterParameter='Sons FX'}"
+                                         Margin="0,0,4,0"/>
+                            <RadioButton GroupName="TypeFilter"
+                                         Style="{StaticResource RadioTemplateStyle}"
+                                         Content="Musiques"
+                                         IsChecked="{Binding SelectedTypeFilter, Converter={StaticResource EqualityConverter}, ConverterParameter='Musiques'}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Arborescence par thème -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,4,0,0">
+                        <!-- Entrée "Tous" -->
+                        <Border Padding="12,8" Cursor="Hand"
+                                x:Name="AllThemeBorder">
+                            <Border.InputBindings>
+                                <MouseBinding MouseAction="LeftClick"
+                                              Command="{Binding ClearFilterCommand}"/>
+                            </Border.InputBindings>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📂" Margin="0,0,8,0"/>
+                                <TextBlock Text="Tous les assets" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding FilteredAssets.Count, StringFormat=' ({0})'}"
+                                           Foreground="{StaticResource BrushTextMuted}" Margin="4,0,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding Categories}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,6" Cursor="Hand">
+                                        <Border.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick"
+                                                          Command="{Binding DataContext.ClearFilterCommand,
+                                                              RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
+                                        </Border.InputBindings>
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource BrushAccentMuted}"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="🗂" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding Theme}"/>
+                                            <TextBlock Text="{Binding Count, StringFormat=' ({0})'}"
+                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                       Margin="4,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Séparateur redimensionnable -->
+        <GridSplitter Grid.Column="1" Width="4"
+                      HorizontalAlignment="Center"
+                      Background="{StaticResource BrushBorder}"
+                      ResizeBehavior="PreviousAndNext"/>
+
+        <!-- ═══════════════════════════════════════════════════
+             ZONE CENTRALE : Liste des assets
+        ═══════════════════════════════════════════════════ -->
+        <DockPanel Grid.Column="2">
+
+            <!-- Barre de recherche + filtres -->
+            <Border DockPanel.Dock="Top"
+                    Padding="12,8"
+                    Background="{StaticResource BrushSurface}"
+                    BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             x:Name="SearchBox"
+                             Margin="0,0,8,0">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource SearchBoxStyle}">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="PlaceholderBrush" TileMode="None"
+                                                 Stretch="None" AlignmentX="Left">
+                                        <VisualBrush.Visual>
+                                            <TextBlock Text="🔍  Rechercher…"
+                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                       FontStyle="Italic" Margin="8,6"/>
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Background" Value="{StaticResource PlaceholderBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsFocused" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource BrushBackground}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+
+                    <ComboBox Grid.Column="1"
+                              Style="{StaticResource ComboBoxStyle}"
+                              ItemsSource="{Binding AvailableThemes}"
+                              SelectedItem="{Binding SelectedThemeFilter}"
+                              Width="130"
+                              Margin="0,0,8,0"/>
+
+                    <Button Grid.Column="2"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ClearFilterCommand}"
+                            Content="✕ Effacer"
+                            Padding="10,6"/>
+                </Grid>
+            </Border>
+
+            <!-- Liste des assets -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- Message vide -->
+                    <TextBlock Visibility="{Binding FilteredAssets.Count,
+                                   Converter={StaticResource ZeroToVisibilityConverter}}"
+                               Text="Aucun asset dans la banque. Importez des fichiers ou scannez un projet."
+                               Foreground="{StaticResource BrushTextMuted}"
+                               FontStyle="Italic"
+                               Margin="16,24,16,0"/>
+
+                    <ItemsControl ItemsSource="{Binding FilteredAssets}"
+                                  Margin="8,8,8,8">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource BrushSurface}"
+                                        BorderBrush="{StaticResource BrushBorder}"
+                                        BorderThickness="1" CornerRadius="5"
+                                        Padding="12,8" Margin="0,0,0,4"
+                                        Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{StaticResource BrushAccent}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.SelectAssetCommand,
+                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+
+                                    <!-- Asset sélectionné au clic, détails dans le panneau droit -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Icône type -->
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding TypeIcon}"
+                                                   FontSize="20"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,10,0"/>
+
+                                        <!-- Infos -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontWeight="SemiBold"
+                                                       FontSize="13"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                <Border Background="{StaticResource BrushAccentMuted}"
+                                                        CornerRadius="3" Padding="5,1"
+                                                        Margin="0,0,6,0">
+                                                    <TextBlock Text="{Binding Theme}"
+                                                               FontSize="10"
+                                                               Foreground="{StaticResource BrushAccent}"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding SizeLabel}"
+                                                           FontSize="10"
+                                                           Foreground="{StaticResource BrushTextMuted}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding DurationLabel}"
+                                                           FontSize="10"
+                                                           Foreground="{StaticResource BrushTextMuted}"
+                                                           Margin="8,0,0,0"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding TagsDisplay}"
+                                                       FontSize="10"
+                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                       Margin="0,2,0,0"
+                                                       Visibility="{Binding TagsDisplay,
+                                                           Converter={StaticResource NotEmptyToVisibilityConverter}}"/>
+                                        </StackPanel>
+
+                                        <!-- Bouton play rapide -->
+                                        <Button Grid.Column="2"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Command="{Binding DataContext.PlayAssetCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Padding="8,4"
+                                                VerticalAlignment="Center"
+                                                Visibility="{Binding PreviewWavPath,
+                                                    Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                                            <Button.Content>
+                                                <TextBlock Text="▶" FontSize="12"/>
+                                            </Button.Content>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Séparateur redimensionnable -->
+        <GridSplitter Grid.Column="3" Width="4"
+                      HorizontalAlignment="Center"
+                      Background="{StaticResource BrushBorder}"
+                      ResizeBehavior="PreviousAndNext"/>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANNEAU DROIT : Détail & Édition
+        ═══════════════════════════════════════════════════ -->
+        <Border Grid.Column="4"
+                Background="{StaticResource BrushSurface}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="1,0,0,0">
+            <DockPanel>
+
+                <!-- En-tête panneau droit -->
+                <Border DockPanel.Dock="Top"
+                        Padding="12,10"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,0,0,1">
+                    <TextBlock Text="Détail de l'asset"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource BrushAccent}"/>
+                </Border>
+
+                <!-- Barre de statut -->
+                <Border DockPanel.Dock="Bottom"
+                        Padding="12,6"
+                        Background="{StaticResource BrushBackground}"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,1,0,0">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="11"
+                               Foreground="{StaticResource BrushTextMuted}"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Placeholder si pas de sélection -->
+                <Border Margin="16,24,16,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="Sélectionnez un asset dans la liste pour voir ses détails."
+                               Foreground="{StaticResource BrushTextMuted}"
+                               FontStyle="Italic"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Détail de l'asset sélectionné -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasSelection,
+                                  Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel Margin="12,8,12,12">
+
+                        <!-- Mode lecture (vue) -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <!-- Icône + nom -->
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,12">
+                                <TextBlock Text="{Binding SelectedAsset.TypeIcon}"
+                                           FontSize="28" Margin="0,0,10,0"
+                                           VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedAsset.Name}"
+                                               FontSize="15" FontWeight="Bold"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding SelectedAsset.TypeLabel}"
+                                               FontSize="11"
+                                               Foreground="{StaticResource BrushTextMuted}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Player -->
+                            <Border Background="{StaticResource BrushBackground}"
+                                    CornerRadius="5" Padding="10,8" Margin="0,0,0,12"
+                                    Visibility="{Binding CanPreview,
+                                        Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding PlayCommand}"
+                                            Content="▶  Écouter"
+                                            Margin="0,0,8,0"/>
+                                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding StopCommand}"
+                                            Content="■  Stop"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pas de preview -->
+                            <Border Background="{StaticResource BrushBackground}"
+                                    CornerRadius="5" Padding="10,8" Margin="0,0,0,12"
+                                    x:Name="NoPreviewBorder">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CanPreview}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="Prévisualisation non disponible (PMF / header C)."
+                                           FontSize="11" FontStyle="Italic"
+                                           Foreground="{StaticResource BrushTextMuted}"
+                                           TextWrapping="Wrap"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Métadonnées -->
+                            <TextBlock Text="INFORMATIONS" Style="{StaticResource SectionHeaderStyle}"/>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Thème"
+                                           Style="{StaticResource FieldLabelStyle}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           Text="{Binding SelectedAsset.Theme}"
+                                           Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Durée"
+                                           Style="{StaticResource FieldLabelStyle}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1"
+                                           Text="{Binding SelectedAsset.DurationLabel}"
+                                           Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Taille"
+                                           Style="{StaticResource FieldLabelStyle}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1"
+                                           Text="{Binding SelectedAsset.SizeLabel}"
+                                           Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Projet"
+                                           Style="{StaticResource FieldLabelStyle}"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1"
+                                           Text="{Binding SelectedAsset.SourceProject}"
+                                           Margin="0,0,0,4" TextWrapping="Wrap"/>
+                            </Grid>
+
+                            <!-- Description -->
+                            <TextBlock Text="DESCRIPTION" Style="{StaticResource SectionHeaderStyle}"
+                                       Visibility="{Binding SelectedAsset.Description,
+                                           Converter={StaticResource NotEmptyToVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding SelectedAsset.Description}"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       Visibility="{Binding SelectedAsset.Description,
+                                           Converter={StaticResource NotEmptyToVisibilityConverter}}"/>
+
+                            <!-- Tags -->
+                            <TextBlock Text="TAGS" Style="{StaticResource SectionHeaderStyle}"/>
+                            <TextBlock Text="{Binding SelectedAsset.TagsDisplay}"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       FontStyle="Italic"/>
+
+                            <!-- Fichier -->
+                            <TextBlock Text="FICHIER SOURCE" Style="{StaticResource SectionHeaderStyle}"/>
+                            <TextBlock Text="{Binding SelectedAsset.FilePath}"
+                                       TextWrapping="Wrap" FontSize="10"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding SelectedAsset.FileExtension}"
+                                       FontSize="10"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       Margin="0,0,0,12"/>
+
+                            <!-- Actions -->
+                            <TextBlock Text="ACTIONS" Style="{StaticResource SectionHeaderStyle}"/>
+
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding EditCommand}"
+                                    Content="✏️  Modifier"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,6"/>
+
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding OpenFileLocationCommand}"
+                                    Content="📂  Ouvrir emplacement"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,6"/>
+
+                            <!-- Ajouter au projet -->
+                            <TextBlock Text="Ajouter dans un projet :"
+                                       Style="{StaticResource FieldLabelStyle}"
+                                       Margin="0,6,0,4"/>
+                            <ComboBox Style="{StaticResource ComboBoxStyle}"
+                                      ItemsSource="{Binding AvailableProjects}"
+                                      DisplayMemberPath="Name"
+                                      x:Name="AddToProjectCombo"
+                                      Margin="0,0,0,4"/>
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding AddToProjectCommand}"
+                                    CommandParameter="{Binding SelectedItem, ElementName=AddToProjectCombo}"
+                                    Content="📋  Copier dans le projet"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,12"/>
+
+                            <Button Style="{StaticResource DangerButtonStyle}"
+                                    Command="{Binding DeleteCommand}"
+                                    Content="🗑  Retirer de la banque"
+                                    HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+
+                        <!-- Mode édition -->
+                        <StackPanel>
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+
+                            <TextBlock Text="✏️  Modifier l'asset"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       Margin="0,4,0,12"/>
+
+                            <!-- Nom -->
+                            <TextBlock Text="Nom" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,10"/>
+
+                            <!-- Description -->
+                            <TextBlock Text="Description" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding EditDescription, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap" Height="60"
+                                     AcceptsReturn="True"
+                                     Margin="0,0,0,10"/>
+
+                            <!-- Thème -->
+                            <TextBlock Text="Thème / Catégorie" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding EditTheme, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,10"/>
+
+                            <!-- Tags -->
+                            <TextBlock Text="Tags (séparés par virgule)" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox Text="{Binding EditTags, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,10"/>
+
+                            <!-- Type -->
+                            <TextBlock Text="Type" Style="{StaticResource FieldLabelStyle}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <RadioButton GroupName="EditType"
+                                             Style="{StaticResource RadioTemplateStyle}"
+                                             Content="🔊  Son FX"
+                                             IsChecked="{Binding EditType,
+                                                 Converter={StaticResource EqualityConverter},
+                                                 ConverterParameter=SoundFx}"
+                                             Margin="0,0,8,0"/>
+                                <RadioButton GroupName="EditType"
+                                             Style="{StaticResource RadioTemplateStyle}"
+                                             Content="🎵  Musique"
+                                             IsChecked="{Binding EditType,
+                                                 Converter={StaticResource EqualityConverter},
+                                                 ConverterParameter=Music}"/>
+                            </StackPanel>
+
+                            <!-- Boutons -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Command="{Binding SaveEditCommand}"
+                                        Content="💾  Enregistrer"/>
+                                <Button Grid.Column="2"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding CancelEditCommand}"
+                                        Content="✕  Annuler"/>
+                            </Grid>
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

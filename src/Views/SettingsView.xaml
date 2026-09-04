@@ -69,6 +69,95 @@
             <TextBox Text="{Binding GamebuinoLibRepoUrl, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource FormTextBoxStyle}" Margin="0,4,0,16"/>
 
+            <!-- ESP-IDF -->
+            <TextBlock Text="ESP-IDF" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="Script d'environnement (export.bat) — recommandé pour build/flash"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding IdfExportScript, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseIdfExportScriptCommand}" Content="Parcourir"/>
+            </Grid>
+
+            <TextBlock Text="Chemin vers idf.py (optionnel si export.bat renseigné ou idf.py dans le PATH)"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding IdfPyPath, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseIdfPyCommand}" Content="Parcourir"/>
+            </Grid>
+
+            <TextBlock Text="Port série pour flash/monitor (ex. COM5 — vide = auto)"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <TextBox Text="{Binding IdfSerialPort, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource FormTextBoxStyle}" Margin="0,4,0,8" MaxWidth="160"
+                     HorizontalAlignment="Left"/>
+
+            <TextBlock Text="Composant components/gamebuino de référence (copié dans les nouveaux projets ESP-IDF)"
+                       Style="{StaticResource FieldLabelStyle}"/>
+            <Grid Margin="0,4,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding ReferenceGamebuinoComponentPath, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource FormTextBoxStyle}" Margin="0,0,8,0"/>
+                <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding BrowseReferenceComponentCommand}" Content="Parcourir"/>
+            </Grid>
+
+            <!-- Chaîne de build par défaut -->
+            <TextBlock Text="Chaîne de build par défaut" Style="{StaticResource SectionHeaderStyle}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,16">
+                <RadioButton Content="ESP-IDF" IsChecked="{Binding IsDefaultEspIdf}"
+                             Style="{StaticResource RadioTemplateStyle}" Margin="0,0,12,0"/>
+                <RadioButton Content="PlatformIO" IsChecked="{Binding IsDefaultPlatformIO}"
+                             Style="{StaticResource RadioTemplateStyle}"/>
+            </StackPanel>
+
+            <!-- Format couleur des assets -->
+            <TextBlock Text="Format couleur des assets" Style="{StaticResource SectionHeaderStyle}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                <RadioButton Content="BGR565 (ordre lib AKA — recommandé)" IsChecked="{Binding IsColorBgrAka}"
+                             Style="{StaticResource RadioTemplateStyle}" Margin="0,0,12,0"/>
+                <RadioButton Content="RGB565 standard" IsChecked="{Binding IsColorRgbStd}"
+                             Style="{StaticResource RadioTemplateStyle}"/>
+            </StackPanel>
+            <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}" TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       Text="La lib AKA (lcd_color_rgb / graphics_make_color) empaquette en BGR565 : rouge en bits bas, bleu en bits hauts. Garder BGR565 évite l'inversion rouge/bleu à l'écran."/>
+            <TextBlock Text="Couleur-clé de transparence (hex)" Style="{StaticResource FieldLabelStyle}"/>
+            <TextBox Text="{Binding DefaultTransparentKeyHex, UpdateSourceTrigger=PropertyChanged}"
+                     Style="{StaticResource FormTextBoxStyle}" Margin="0,4,0,24" MaxWidth="160"
+                     HorizontalAlignment="Left"/>
+
+            <!-- Journal -->
+            <TextBlock Text="Journal (logs)" Style="{StaticResource SectionHeaderStyle}"/>
+            <TextBlock Text="{Binding LogFilePath}" FontSize="11"
+                       Foreground="{StaticResource BrushTextMuted}" TextWrapping="Wrap"
+                       Margin="0,4,0,8"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                <Button Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding OpenLogFolderCommand}"
+                        Content="📂 Ouvrir le dossier" Margin="0,0,8,0"/>
+                <Button Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding DeleteLogCommand}"
+                        Content="🗑 Supprimer le journal"/>
+            </StackPanel>
+
             <!-- Theme -->
             <TextBlock Text="Thème" Style="{StaticResource SectionHeaderStyle}"/>
             <ComboBox ItemsSource="{Binding Themes}"

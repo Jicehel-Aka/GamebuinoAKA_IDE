@@ -1,0 +1,410 @@
+<UserControl x:Class="GamebuinoAKA.IDE.Views.CodeSnippetPickerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:GamebuinoAKA.IDE.ViewModels"
+             Background="{StaticResource BrushBackground}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Panneau gauche : catalogue par catégorie + cases à cocher -->
+            <ColumnDefinition Width="300" MinWidth="220"/>
+            <ColumnDefinition Width="Auto"/>
+            <!-- Panneau central : explication détaillée -->
+            <ColumnDefinition Width="*" MinWidth="240"/>
+            <ColumnDefinition Width="Auto"/>
+            <!-- Panneau droit : preview code -->
+            <ColumnDefinition Width="340" MinWidth="220"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANNEAU GAUCHE : Catalogue avec cases à cocher
+        ═══════════════════════════════════════════════════ -->
+        <Border Grid.Column="0"
+                Background="{StaticResource BrushSurface}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+
+                <!-- En-tête -->
+                <Border DockPanel.Dock="Top" Padding="12,10"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,0,0,1">
+                    <StackPanel>
+                        <TextBlock Text="📚  Banque de fonctions"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushAccent}"
+                                   Margin="0,0,0,8"/>
+                        <!-- Recherche -->
+                        <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,0,6">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" BasedOn="{StaticResource SearchBoxStyle}">
+                                    <Style.Resources>
+                                        <VisualBrush x:Key="PH" TileMode="None" Stretch="None" AlignmentX="Left">
+                                            <VisualBrush.Visual>
+                                                <TextBlock Text="🔍  Rechercher…"
+                                                           Foreground="{StaticResource BrushTextMuted}"
+                                                           FontStyle="Italic" Margin="8,6"/>
+                                            </VisualBrush.Visual>
+                                        </VisualBrush>
+                                    </Style.Resources>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Background" Value="{StaticResource PH}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsFocused" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource BrushBackground}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        <!-- Filtre catégorie -->
+                        <ComboBox Style="{StaticResource ComboBoxStyle}"
+                                  ItemsSource="{Binding AvailableCategories}"
+                                  SelectedItem="{Binding CategoryFilter}"
+                                  Margin="0,0,0,6"/>
+                        <!-- Tout / Rien -->
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding SelectAllCommand}"
+                                    Content="✅ Tout"
+                                    Padding="10,5"
+                                    Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding DeselectAllCommand}"
+                                    Content="☐ Aucun"
+                                    Padding="10,5"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Résumé sélection -->
+                <Border DockPanel.Dock="Bottom" Padding="12,8"
+                        Background="{StaticResource BrushBackground}"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,1,0,0">
+                    <TextBlock Text="{Binding SelectionSummary}"
+                               FontSize="11"
+                               Foreground="{StaticResource BrushTextMuted}"
+                               TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Liste groupée par catégorie -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Categories}"
+                                  Margin="0,4,0,4">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <!-- En-tête de catégorie -->
+                                    <Border Background="{StaticResource BrushBackground}"
+                                            Padding="12,6,12,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="▸ " Foreground="{StaticResource BrushAccent}"
+                                                       FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Category}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{StaticResource BrushAccent}"/>
+                                            <TextBlock Text="{Binding Count, StringFormat=' ({0})'}"
+                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                       FontSize="11" Margin="4,0,0,0"
+                                                       VerticalAlignment="Bottom"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Items de la catégorie -->
+                                    <ItemsControl ItemsSource="{Binding Snippets}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="8,5,8,5" Cursor="Hand">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource BrushAccentMuted}"/>
+                                                                </Trigger>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background"
+                                                                            Value="{StaticResource BrushAccentMuted}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftClick"
+                                                                      Command="{Binding DataContext.FocusCommand,
+                                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Case à cocher -->
+                                                        <CheckBox Grid.Column="0"
+                                                                  IsChecked="{Binding IsSelected}"
+                                                                  VerticalAlignment="Center"
+                                                                  Margin="0,0,8,0"/>
+
+                                                        <!-- Nom + résumé -->
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Snippet.Name}"
+                                                                       FontSize="13" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding Snippet.Summary}"
+                                                                       FontSize="10"
+                                                                       Foreground="{StaticResource BrushTextMuted}"
+                                                                       TextWrapping="Wrap"
+                                                                       Margin="0,1,0,0"/>
+                                                        </StackPanel>
+
+                                                        <!-- Badge compatibilité -->
+                                                        <Border Grid.Column="2"
+                                                                Background="{StaticResource BrushAccentMuted}"
+                                                                CornerRadius="3" Padding="4,1"
+                                                                VerticalAlignment="Center"
+                                                                Margin="6,0,0,0">
+                                                            <TextBlock Text="{Binding Snippet.CompatibilityLabel}"
+                                                                       FontSize="9"
+                                                                       Foreground="{StaticResource BrushAccent}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!-- Séparateur -->
+        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center"
+                      Background="{StaticResource BrushBorder}"
+                      ResizeBehavior="PreviousAndNext"/>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANNEAU CENTRAL : Explication détaillée
+        ═══════════════════════════════════════════════════ -->
+        <DockPanel Grid.Column="2">
+
+            <Border DockPanel.Dock="Top" Padding="16,12"
+                    Background="{StaticResource BrushSurface}"
+                    BorderBrush="{StaticResource BrushBorder}"
+                    BorderThickness="0,0,0,1">
+                <TextBlock Text="📖  Explication"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="{StaticResource BrushAccent}"/>
+            </Border>
+
+            <!-- Placeholder -->
+            <Border Margin="16,20,16,0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasFocus}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <TextBlock Text="Cliquez sur une fonction dans le catalogue pour afficher son explication."
+                           Foreground="{StaticResource BrushTextMuted}"
+                           FontStyle="Italic" TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Détail du snippet sélectionné -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding HasFocus,
+                              Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Margin="16,12,16,16">
+
+                    <!-- Nom + badge catégorie -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" FlowDirection="LeftToRight">
+                        <TextBlock Text="{Binding Focused.Snippet.Name}"
+                                   FontSize="16" FontWeight="Bold"
+                                   Foreground="{StaticResource BrushText}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource BrushAccentMuted}"
+                                CornerRadius="4" Padding="6,2" Margin="10,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Focused.Snippet.Category}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource BrushAccent}"/>
+                        </Border>
+                        <Border Background="{StaticResource BrushSurface}"
+                                CornerRadius="4" Padding="6,2" Margin="6,0,0,0"
+                                VerticalAlignment="Center"
+                                BorderBrush="{StaticResource BrushBorder}"
+                                BorderThickness="1">
+                            <TextBlock Text="{Binding Focused.Snippet.CompatibilityLabel}"
+                                       FontSize="11"
+                                       Foreground="{StaticResource BrushTextMuted}"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Résumé -->
+                    <TextBlock Text="{Binding Focused.Snippet.Summary}"
+                               FontSize="13" FontStyle="Italic"
+                               Foreground="{StaticResource BrushTextMuted}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"/>
+
+                    <!-- Séparateur -->
+                    <Separator Margin="0,0,0,12"/>
+
+                    <!-- Explication longue -->
+                    <TextBlock Text="{Binding Focused.Snippet.Explanation}"
+                               FontSize="13"
+                               Foreground="{StaticResource BrushText}"
+                               TextWrapping="Wrap"
+                               LineHeight="20"
+                               Margin="0,0,0,16"/>
+
+                    <!-- Tags -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12"
+                                Visibility="{Binding Focused.Snippet.Tags.Count,
+                                    Converter={StaticResource ZeroToVisibilityConverter},
+                                    ConverterParameter=invert}">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Focused.Snippet.Tags.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="Tags : "
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushTextMuted}"
+                                   VerticalAlignment="Center"/>
+                        <ItemsControl ItemsSource="{Binding Focused.Snippet.Tags}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{StaticResource BrushSurface}"
+                                            BorderBrush="{StaticResource BrushBorder}"
+                                            BorderThickness="1" CornerRadius="3"
+                                            Padding="5,1" Margin="3,1">
+                                        <TextBlock Text="{Binding}" FontSize="10"
+                                                   Foreground="{StaticResource BrushTextMuted}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Fichier cible -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Injecté dans : "
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource BrushTextMuted}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource BrushBackground}"
+                                CornerRadius="3" Padding="6,2">
+                            <TextBlock Text="{Binding Focused.Snippet.TargetFile}"
+                                       FontSize="11" FontFamily="Consolas"
+                                       Foreground="{StaticResource BrushAccent}"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Bouton cocher/décocher depuis le panneau détail -->
+                    <Button Margin="0,16,0,0"
+                            HorizontalAlignment="Left"
+                            Command="{Binding FocusCommand}"
+                            CommandParameter="{Binding Focused}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+                                <Setter Property="Content" Value="☐  Ajouter au projet"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Focused.IsSelected}" Value="True">
+                                        <Setter Property="Content" Value="✅  Retiré du projet"/>
+                                        <Setter Property="Background" Value="{StaticResource BrushSurface}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource BrushText}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+
+        <!-- Séparateur -->
+        <GridSplitter Grid.Column="3" Width="4" HorizontalAlignment="Center"
+                      Background="{StaticResource BrushBorder}"
+                      ResizeBehavior="PreviousAndNext"/>
+
+        <!-- ═══════════════════════════════════════════════════
+             PANNEAU DROIT : Preview du code
+        ═══════════════════════════════════════════════════ -->
+        <Border Grid.Column="4"
+                Background="{StaticResource BrushBackground}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="1,0,0,0">
+            <DockPanel>
+
+                <Border DockPanel.Dock="Top" Padding="12,10"
+                        Background="{StaticResource BrushSurface}"
+                        BorderBrush="{StaticResource BrushBorder}"
+                        BorderThickness="0,0,0,1">
+                    <TextBlock Text="💻  Aperçu du code"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{StaticResource BrushAccent}"/>
+                </Border>
+
+                <!-- Placeholder code -->
+                <Border Margin="12,16,12,0">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasFocus}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="Sélectionnez une fonction pour prévisualiser son code."
+                               Foreground="{StaticResource BrushTextMuted}"
+                               FontStyle="Italic" TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Code du snippet -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasFocus,
+                                  Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Border Margin="8" Padding="12"
+                            Background="{StaticResource BrushSurface}"
+                            CornerRadius="4"
+                            BorderBrush="{StaticResource BrushBorder}"
+                            BorderThickness="1">
+                        <TextBlock Text="{Binding PreviewCode}"
+                                   FontFamily="Consolas, Courier New, monospace"
+                                   FontSize="11.5"
+                                   Foreground="{StaticResource BrushText}"
+                                   TextWrapping="NoWrap"/>
+                    </Border>
+                </ScrollViewer>
+
+            </DockPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

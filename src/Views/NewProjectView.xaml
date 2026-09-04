@@ -1,123 +1,321 @@
 <UserControl x:Class="GamebuinoAKA.IDE.Views.NewProjectView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:GamebuinoAKA.IDE.Views"
              Background="{StaticResource BrushBackground}">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel MaxWidth="600" Margin="40,32" HorizontalAlignment="Left">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="Nouveau projet" FontSize="24" FontWeight="Bold"
-                       Foreground="{StaticResource BrushText}" Margin="0,0,0,24"/>
-
-            <!-- Project Name -->
-            <TextBlock Text="Nom du projet" Style="{StaticResource FieldLabelStyle}"/>
-            <TextBox Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}"
-                     Style="{StaticResource FormTextBoxStyle}"/>
-
-            <!-- Template Selection -->
-            <TextBlock Text="Template" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
-            <StackPanel Orientation="Horizontal">
-                <RadioButton Content="Empty"
-                             IsChecked="{Binding SelectedTemplate,
-                                 Converter={StaticResource EqualityConverter},
-                                 ConverterParameter=empty}"
-                             Style="{StaticResource RadioTemplateStyle}"
-                             Margin="0,0,12,0"/>
-                <RadioButton Content="Hello World"
-                             IsChecked="{Binding SelectedTemplate,
-                                 Converter={StaticResource EqualityConverter},
-                                 ConverterParameter=hello-world}"
-                             Style="{StaticResource RadioTemplateStyle}"
-                             Margin="0,0,12,0"/>
-                <RadioButton Content="Game Template"
-                             IsChecked="{Binding SelectedTemplate,
-                                 Converter={StaticResource EqualityConverter},
-                                 ConverterParameter=game-template}"
-                             Style="{StaticResource RadioTemplateStyle}"/>
+        <!-- ── Titre ──────────────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Padding="32,20,32,0">
+            <StackPanel>
+                <TextBlock Text="Nouveau projet" FontSize="24" FontWeight="Bold"
+                           Foreground="{StaticResource BrushText}"/>
+                <TextBlock Text="{Binding SnippetPicker.SelectionSummary}"
+                           FontSize="12" Margin="0,4,0,0"
+                           Foreground="{StaticResource BrushTextMuted}"/>
             </StackPanel>
+        </Border>
 
-            <!-- Template description -->
-            <Border Background="{StaticResource BrushSurface}"
-                    BorderBrush="{StaticResource BrushBorder}"
-                    BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,8,0,0">
-                <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12"
-                           TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="empty">
-                                    <Setter Property="Text" Value="Projet vide avec platformio.ini pré-configuré pour l'ESP32-S3 Gamebuino AKA. Aucun code de démarrage."/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="hello-world">
-                                    <Setter Property="Text" Value="Affiche &quot;Hello Gamebuino AKA!&quot; sur l'écran. Idéal pour valider le setup."/>
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="game-template">
-                                    <Setter Property="Text" Value="Structure complète avec game.h/game.cpp séparant la logique et le rendu. Idéal pour débuter un vrai jeu."/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Border>
+        <!-- ── Onglets ──────────────────────────────────────────────────────────────── -->
+        <TabControl Grid.Row="1"
+                    SelectedIndex="{Binding ActiveTab}"
+                    Background="{StaticResource BrushBackground}"
+                    BorderThickness="0"
+                    Margin="0,12,0,0">
 
-            <!-- Destination Folder -->
-            <TextBlock Text="Dossier de destination" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+            <TabControl.Resources>
+                <!-- Style des onglets -->
+                <Style TargetType="TabItem">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{StaticResource BrushTextMuted}"/>
+                    <Setter Property="FontSize" Value="13"/>
+                    <Setter Property="Padding" Value="16,8"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,2"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border x:Name="Bd" Padding="{TemplateBinding Padding}"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter ContentSource="Header"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="BorderBrush"
+                                                Value="{StaticResource BrushAccent}"/>
+                                        <Setter Property="Foreground"
+                                                Value="{StaticResource BrushAccent}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background"
+                                                Value="{StaticResource BrushAccentMuted}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <!-- ── Onglet 1 : Configuration ──────────────────────────────────── -->
+            <TabItem Header="⚙️  Configuration">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="600" Margin="32,16,32,24" HorizontalAlignment="Left">
+
+                        <!-- Project Name -->
+                        <TextBlock Text="Nom du projet" Style="{StaticResource FieldLabelStyle}"/>
+                        <TextBox Text="{Binding ProjectName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormTextBoxStyle}"/>
+
+                        <!-- Build system -->
+                        <TextBlock Text="Chaîne de build" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="ESP-IDF (coquille + composants CMake)"
+                                         IsChecked="{Binding IsEspIdf}"
+                                         Style="{StaticResource RadioTemplateStyle}"
+                                         Margin="0,0,12,0"/>
+                            <RadioButton Content="PlatformIO (Arduino)"
+                                         IsChecked="{Binding IsPlatformIO}"
+                                         Style="{StaticResource RadioTemplateStyle}"/>
+                        </StackPanel>
+
+                        <!-- Build system description -->
+                        <Border Background="{StaticResource BrushSurface}"
+                                BorderBrush="{StaticResource BrushBorder}"
+                                BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,8,0,0">
+                            <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="ESP-IDF : projet natif à composants CMake (root CMakeLists, main/, components/gamebuino, sdkconfig.defaults, partitions.csv). C'est la structure de tes jeux (mAKArena, pAKAman…). Build via idf.py."/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlatformIO}" Value="True">
+                                                <Setter Property="Text" Value="PlatformIO : projet Arduino (platformio.ini + src/), lib jmp42/Gamebuino_AKA_lib récupérée automatiquement. Build via pio. Voie « communauté / débutant »."/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+
+                        <!-- Template Selection (PlatformIO seulement) -->
+                        <StackPanel Visibility="{Binding IsPlatformIO, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock Text="Template de démarrage" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="Empty"
+                                             IsChecked="{Binding SelectedTemplate,
+                                                 Converter={StaticResource EqualityConverter},
+                                                 ConverterParameter=empty}"
+                                             Style="{StaticResource RadioTemplateStyle}"
+                                             Margin="0,0,12,0"/>
+                                <RadioButton Content="Hello World"
+                                             IsChecked="{Binding SelectedTemplate,
+                                                 Converter={StaticResource EqualityConverter},
+                                                 ConverterParameter=hello-world}"
+                                             Style="{StaticResource RadioTemplateStyle}"
+                                             Margin="0,0,12,0"/>
+                                <RadioButton Content="Game Template"
+                                             IsChecked="{Binding SelectedTemplate,
+                                                 Converter={StaticResource EqualityConverter},
+                                                 ConverterParameter=game-template}"
+                                             Style="{StaticResource RadioTemplateStyle}"/>
+                            </StackPanel>
+                            <Border Background="{StaticResource BrushSurface}"
+                                    BorderBrush="{StaticResource BrushBorder}"
+                                    BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,8,0,0">
+                                <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12"
+                                           TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="empty">
+                                                    <Setter Property="Text" Value="Projet vide avec platformio.ini pré-configuré. Aucun code de démarrage."/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="hello-world">
+                                                    <Setter Property="Text" Value="Affiche &quot;Hello Gamebuino AKA!&quot; sur l'écran. Idéal pour valider le setup."/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding SelectedTemplate}" Value="game-template">
+                                                    <Setter Property="Text" Value="Structure game.h/game.cpp séparant logique et rendu. Idéal pour un vrai jeu. Les fonctions sélectionnées dans l'onglet Fonctions seront injectées dans ces fichiers."/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Note ESP-IDF composant -->
+                        <Border Visibility="{Binding IsEspIdf, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Background="{StaticResource BrushSurface}"
+                                BorderBrush="{StaticResource BrushBorder}"
+                                BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,12,0,0">
+                            <TextBlock Foreground="{StaticResource BrushTextMuted}" FontSize="12" TextWrapping="Wrap"
+                                       Text="Le composant components/gamebuino sera copié depuis le dossier de référence configuré dans les Paramètres."/>
+                        </Border>
+
+                        <!-- Destination Folder -->
+                        <TextBlock Text="Dossier de destination" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding DestinationFolder, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormTextBoxStyle}"
+                                     Margin="0,0,8,0"/>
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding BrowseDestinationCommand}"
+                                    Content="Parcourir"/>
+                        </Grid>
+
+                        <!-- Preview path -->
+                        <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,4,0,0">
+                            <Run Text="Créera : "/>
+                            <Run Text="{Binding DestinationFolder}"/>
+                            <Run Text="\"/>
+                            <Run Text="{Binding ProjectName}" FontWeight="SemiBold"/>
+                        </TextBlock>
+
+                        <!-- Inviter à choisir des fonctions -->
+                        <Border Margin="0,16,0,0" Padding="12,10" CornerRadius="4"
+                                Background="{StaticResource BrushAccentMuted}"
+                                BorderBrush="{StaticResource BrushAccent}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="Ajoutez des fonctions prêtes à l'emploi (entrées, graphismes, son, physique…) à votre projet grâce à la banque de fonctions."
+                                           FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{StaticResource BrushText}"
+                                           VerticalAlignment="Center"/>
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding GoToSnippetsCommand}"
+                                        Content="📚  Choisir les fonctions →"
+                                        Margin="12,0,0,0"
+                                        VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ── Onglet 2 : Banque de fonctions ──────────────────────────── -->
+            <TabItem Header="📚  Fonctions">
+                <DockPanel>
+                    <!-- Bandeau info au-dessus du picker -->
+                    <Border DockPanel.Dock="Top"
+                            Padding="16,8"
+                            Background="{StaticResource BrushSurface}"
+                            BorderBrush="{StaticResource BrushBorder}"
+                            BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Cochez les fonctions à intégrer dans le projet. Elles seront ajoutées dans les fichiers sources avec leurs commentaires explicatifs."
+                                       FontSize="12"
+                                       Foreground="{StaticResource BrushTextMuted}"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,16,0"/>
+                            <TextBlock Text="{Binding SnippetPicker.SelectedCount, StringFormat='{}{0} sélectionnée(s)'}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource BrushAccent}"
+                                       VerticalAlignment="Center"
+                                       MinWidth="120"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Le picker hérite du DataContext du SnippetPicker -->
+                    <ContentControl DockPanel.Dock="Bottom"
+                                    Content="{Binding SnippetPicker}">
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate>
+                                <views:CodeSnippetPickerView DataContext="{Binding}"/>
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                    </ContentControl>
+                </DockPanel>
+            </TabItem>
+
+        </TabControl>
+
+        <!-- ── Barre d'actions (bas fixe) ──────────────────────────────────────── -->
+        <Border Grid.Row="2"
+                Padding="32,12"
+                Background="{StaticResource BrushSurface}"
+                BorderBrush="{StaticResource BrushBorder}"
+                BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0"
-                         Text="{Binding DestinationFolder, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource FormTextBoxStyle}"
-                         Margin="0,0,8,0"/>
-                <Button Grid.Column="1"
-                        Style="{StaticResource SecondaryButtonStyle}"
-                        Command="{Binding BrowseDestinationCommand}"
-                        Content="Parcourir"/>
+
+                <!-- Status / Error -->
+                <Border Grid.Column="0" Padding="12,8" CornerRadius="4"
+                        Margin="0,0,16,0"
+                        Visibility="{Binding StatusMessage,
+                            Converter={StaticResource NotEmptyToVisibilityConverter}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="#1A3A1A"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasError}" Value="True">
+                                    <Setter Property="Background" Value="#3A1A1A"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{StaticResource BrushText}" FontSize="12"
+                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Boutons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Création en cours..."
+                               Foreground="{StaticResource BrushTextMuted}"
+                               VerticalAlignment="Center" Margin="0,0,12,0"
+                               Visibility="{Binding IsCreating,
+                                   Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding CreateProjectCommand}"
+                            IsEnabled="{Binding IsCreating,
+                                Converter={StaticResource InverseBoolConverter}}"
+                            Margin="0,0,8,0">
+                        <Button.Content>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                        <Setter Property="Text" Value="✅  Créer le projet"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SnippetPicker.SelectedCount}" Value="0">
+                                                <Setter Property="Text" Value="✅  Créer le projet"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
             </Grid>
+        </Border>
 
-            <!-- Preview path -->
-            <TextBlock FontSize="11" Foreground="{StaticResource BrushTextMuted}" Margin="0,4,0,0">
-                <Run Text="Créera : "/>
-                <Run Text="{Binding DestinationFolder}"/>
-                <Run Text="\"/>
-                <Run Text="{Binding ProjectName}" FontWeight="SemiBold"/>
-            </TextBlock>
-
-            <!-- Status / Error -->
-            <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="4"
-                    Visibility="{Binding StatusMessage,
-                        Converter={StaticResource NotEmptyToVisibilityConverter}}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="#1A3A1A"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasError}" Value="True">
-                                <Setter Property="Background" Value="#3A1A1A"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <TextBlock Text="{Binding StatusMessage}"
-                           Foreground="{StaticResource BrushText}" FontSize="13"
-                           TextWrapping="Wrap"/>
-            </Border>
-
-            <!-- Actions -->
-            <StackPanel Orientation="Horizontal" Margin="0,24,0,0">
-                <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Command="{Binding CreateProjectCommand}"
-                        Content="✅  Créer le projet"
-                        IsEnabled="{Binding IsCreating,
-                            Converter={StaticResource InverseBoolConverter}}"
-                        Margin="0,0,12,0"/>
-                <TextBlock Text="Création en cours..."
-                           Foreground="{StaticResource BrushTextMuted}"
-                           VerticalAlignment="Center"
-                           Visibility="{Binding IsCreating,
-                               Converter={StaticResource BoolToVisibilityConverter}}"/>
-            </StackPanel>
-        </StackPanel>
-    </ScrollViewer>
+    </Grid>
 </UserControl>
